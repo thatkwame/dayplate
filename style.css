@@ -5,3 +5,6 @@
 .food-matches button{display:block;text-align:left;width:100%;padding:.6rem;border-bottom:1px solid #e3e7de}
 .food-matches button:hover{background:#edf4e9}
 .estimate{font-weight:600;color:#194c3b}
+
+.recipe-section{margin:24px 0 0;scroll-margin-top:1rem}.recipe-choice{display:block;width:100%;padding:14px 0;text-align:left;border-bottom:1px solid #e3e7de}.recipe-choice:last-child{border:0}.recipe-choice small{display:block;color:#54665b}#fields li+li{margin-top:.3rem}dialog{max-height:90dvh;overflow-y:auto}
+@media(max-width:450px){.bar{gap:8px}.bar nav{gap:9px}.brand{gap:5px}.bar>.quiet{white-space:nowrap}}

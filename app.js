@@ -56,6 +56,7 @@ function render() {
   for(const e of state.entries) totals.set(e.date,(totals.get(e.date)||0)+e.kcal);
   const total=totals.get(selected)||0;
   $('dateLabel').textContent=label(selected,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  renderRecipes(total);
   $('total').textContent=fmt(total);$('goal').textContent=state.goal?'Goal · '+fmt(state.goal)+' kcal':'Set a daily goal';
   $('remaining').textContent=state.goal ? fmt(Math.abs(state.goal-total))+(total>state.goal?' kcal above goal':' kcal remaining') : '';
   $('groups').replaceChildren();
@@ -189,4 +190,5 @@ $('data').onclick=()=>{
     }catch{$('error').textContent='Choose a valid Dayplate JSON backup.';file.value='';}
   };
 };
+$('recipe-meal').onchange=render;
 window.addEventListener('storage',event=>{if(!event.key||event.key===key)refresh();});refresh();
