@@ -8,3 +8,5 @@
 
 .recipe-section{margin:24px 0 0;scroll-margin-top:1rem}.recipe-choice{display:block;width:100%;padding:14px 0;text-align:left;border-bottom:1px solid #e3e7de}.recipe-choice:last-child{border:0}.recipe-choice small{display:block;color:#54665b}#fields li+li{margin-top:.3rem}dialog{max-height:90dvh;overflow-y:auto}
 @media(max-width:450px){.bar{gap:8px}.bar nav{gap:9px}.brand{gap:5px}.bar>.quiet{white-space:nowrap}}
+
+.shortcuts,.batch-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}.shortcuts{margin-top:.6rem}.batch-row{padding:.65rem 0;border-bottom:1px solid #e3e7de}.batch-row>div,.batch-row>span{flex:1;min-width:8rem;overflow-wrap:anywhere}.batch-row small{display:block;color:#54665b}.repeat-pick{display:flex;align-items:center;gap:.5rem}.repeat-pick input{width:auto}.repeat-pick+label{margin-top:0}

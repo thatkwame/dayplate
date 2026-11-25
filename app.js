@@ -23,13 +23,15 @@ function validate(d) {
     }
     ids.add(e.id);
   }
+  d.savedRecipes ??= [];
+  validateRecipes(d.savedRecipes);
   return d;
 }
 function read() {
   const raw=localStorage.getItem(key);
-  return raw===null ? {version:1,entries:[],goal:null} : validate(JSON.parse(raw));
+  return raw===null ? {version:1,entries:[],goal:null,savedRecipes:[]} : validate(JSON.parse(raw));
 }
-let state={version:1,entries:[],goal:null}, selected=today(), month=selected.slice(0,7);
+let state={version:1,entries:[],goal:null,savedRecipes:[]}, selected=today(), month=selected.slice(0,7);
 let noticeTimer;
 function notify(msg,sticky=false) {
   clearTimeout(noticeTimer); $('notice').textContent=msg;
@@ -56,7 +58,7 @@ function render() {
   for(const e of state.entries) totals.set(e.date,(totals.get(e.date)||0)+e.kcal);
   const total=totals.get(selected)||0;
   $('dateLabel').textContent=label(selected,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  renderRecipes(total);
+  renderRecipes(total);renderPersonal();
   $('total').textContent=fmt(total);$('goal').textContent=state.goal?'Goal · '+fmt(state.goal)+' kcal':'Set a daily goal';
   $('remaining').textContent=state.goal ? fmt(Math.abs(state.goal-total))+(total>state.goal?' kcal above goal':' kcal remaining') : '';
   $('groups').replaceChildren();
@@ -110,7 +112,8 @@ document.querySelector('.close').onclick=()=>dialog.close();
 $('form').onsubmit=async event=>{event.preventDefault();if(!submit)return;
   try {await submit();dialog.close();}catch(err){$('error').textContent=err.message||'Unable to save your changes.';}
 };
-function food(meal='Breakfast',entry=null){
+function food(meal='Breakfast',entry=null,copy=null){
+  const initial=entry||copy;
   modal(entry?'Edit food':'Log food','Save food',()=>{
     const name=description.value.trim();if(!name)throw Error('Enter a food or meal.');
     const record={id:entry?.id || crypto.randomUUID(),name,meal:category.value,date:date.value,kcal:Number(kcal.value)};
@@ -128,17 +131,17 @@ function food(meal='Breakfast',entry=null){
   });
   const modes=field('Entry method','select',null);
   modes.replaceChildren(new Option('Look up food by weight','weight'),new Option('Enter calories manually','manual'));
-  let picked=entry?.portion ? [entry.name,entry.portion.per100] : null;
-  modes.value=(entry && !picked) || typeof dayplateFoods==='undefined' ? 'manual':'weight';
-  const description=field('Food or meal','text',entry?.name||'',{required:true,maxLength:160,placeholder:'e.g. rice, chicken breast or banana',autocomplete:'off'});
+  let picked=initial?.portion ? [initial.name,initial.portion.per100] : null;
+  modes.value=(initial && !picked) || typeof dayplateFoods==='undefined' ? 'manual':'weight';
+  const description=field('Food or meal','text',initial?.name||'',{required:true,maxLength:160,placeholder:'e.g. rice, chicken breast or banana',autocomplete:'off'});
   const matches=node('div','','food-matches');fields.append(matches);
-  const grams=field('Portion weight (g)','number',entry?.portion?.grams??'',{min:0.01,max:100000,step:'any',inputMode:'decimal'});
+  const grams=field('Portion weight (g)','number',initial?.portion?.grams??'',{min:0.01,max:100000,step:'any',inputMode:'decimal'});
   const estimate=node('p','','estimate');estimate.setAttribute('aria-live','polite');fields.append(estimate);
   const credit=node('p','Food data: UK CoFID 2021. Choose the preparation that matches what you weighed.','sub');fields.append(credit);
-  const kcal=field('Calories for this portion (kcal)','number',entry?.kcal??'',{min:0,max:100000,step:1,inputMode:'numeric'});
+  const kcal=field('Calories for this portion (kcal)','number',initial?.kcal??'',{min:0,max:100000,step:1,inputMode:'numeric'});
   function updateEstimate(){
     const weight=grams.valueAsNumber;
-    estimate.textContent=picked ? picked[1]+' kcal per 100 g'+(weight>0?' · '+fmt(Math.round(picked[1]*weight/100))+' kcal for this portion':'') : '';
+    estimate.textContent=picked ? fmt(picked[1])+' kcal per 100 g'+(weight>0?' · '+fmt(Math.round(picked[1]*weight/100))+' kcal for this portion':'') : '';
   }
   function search(){
     matches.replaceChildren();
@@ -186,9 +189,10 @@ $('data').onclick=()=>{
       if(!file.files.length)return;
       const backup=validate(JSON.parse(await file.files[0].text()));
       modal('Restore this diary?','Replace diary',()=>{commit(d=>Object.assign(d,backup));notify('Backup restored');});
-      fields.append(node('p','This will replace the entries and goal in this browser with the '+backup.entries.length+' entries and goal from your backup.'));
+      fields.append(node('p','This will replace your diary, recipes and goal with this backup ('+backup.entries.length+' entries and '+backup.savedRecipes.length+' recipes).'));
     }catch{$('error').textContent='Choose a valid Dayplate JSON backup.';file.value='';}
   };
 };
 $('recipe-meal').onchange=render;
+$('recent').onclick=recentFoods;$('repeat').onclick=repeatMeal;$('build').onclick=()=>buildRecipe();
 window.addEventListener('storage',event=>{if(!event.key||event.key===key)refresh();});refresh();
