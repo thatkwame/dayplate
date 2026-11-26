@@ -25,13 +25,15 @@ function validate(d) {
   }
   d.savedRecipes ??= [];
   validateRecipes(d.savedRecipes);
+  d.products ??= [];
+  if(!Array.isArray(d.products)||!d.products.every(checkProduct))throw Error('Invalid saved products.');
   return d;
 }
 function read() {
   const raw=localStorage.getItem(key);
-  return raw===null ? {version:1,entries:[],goal:null,savedRecipes:[]} : validate(JSON.parse(raw));
+  return raw===null ? {version:1,entries:[],goal:null,savedRecipes:[],products:[]} : validate(JSON.parse(raw));
 }
-let state={version:1,entries:[],goal:null,savedRecipes:[]}, selected=today(), month=selected.slice(0,7);
+let state={version:1,entries:[],goal:null,savedRecipes:[],products:[]}, selected=today(), month=selected.slice(0,7);
 let noticeTimer;
 function notify(msg,sticky=false) {
   clearTimeout(noticeTimer); $('notice').textContent=msg;
@@ -69,7 +71,7 @@ function render() {
     const icon=node('span',symbols[i],'icon');icon.ariaHidden='true';
     head.append(icon,summary,action('+',()=>food(meal),'plus','Log food for '+meal));group.append(head);
     for(const e of list) {
-      const row=node('div','','entry');row.append(node('span',e.name+(e.portion?' · '+fmt(e.portion.grams)+' g':'')),node('small',fmt(e.kcal)+' kcal'),action('Edit',()=>food(meal,e),'','Edit '+e.name));group.append(row);
+      const row=node('div','','entry');row.append(node('span',e.name+(e.portion?' · '+fmt(e.portion.grams)+' '+(e.portion.unit||'g'):'')),node('small',fmt(e.kcal)+' kcal'),action('Edit',()=>food(meal,e),'','Edit '+e.name));group.append(row);
     }
     $('groups').append(group);
   });
@@ -119,7 +121,7 @@ function food(meal='Breakfast',entry=null,copy=null){
     const record={id:entry?.id || crypto.randomUUID(),name,meal:category.value,date:date.value,kcal:Number(kcal.value)};
     if(modes.value==='weight'){
       if(!picked)throw Error('Select a matching food before saving.');
-      record.portion={grams:grams.valueAsNumber,per100:picked[1]};
+      record.portion={grams:grams.valueAsNumber,per100:picked[1],unit:portionUnit};
       record.kcal=Math.round(record.portion.grams*record.portion.per100/100);
       if(!validNumber(record.kcal))throw Error('Check the portion weight.');
     }
@@ -135,13 +137,14 @@ function food(meal='Breakfast',entry=null,copy=null){
   modes.value=(initial && !picked) || typeof dayplateFoods==='undefined' ? 'manual':'weight';
   const description=field('Food or meal','text',initial?.name||'',{required:true,maxLength:160,placeholder:'e.g. rice, chicken breast or banana',autocomplete:'off'});
   const matches=node('div','','food-matches');fields.append(matches);
-  const grams=field('Portion weight (g)','number',initial?.portion?.grams??'',{min:0.01,max:100000,step:'any',inputMode:'decimal'});
+  let portionUnit=initial?.portion?.unit||'g';
+  const grams=field(portionUnit==='ml'?'Portion (ml)':'Portion weight (g)','number',initial?.portion?.grams??'',{min:0.01,max:100000,step:'any',inputMode:'decimal'});
   const estimate=node('p','','estimate');estimate.setAttribute('aria-live','polite');fields.append(estimate);
   const credit=node('p','Food data: UK CoFID 2021. Choose the preparation that matches what you weighed.','sub');fields.append(credit);
   const kcal=field('Calories for this portion (kcal)','number',initial?.kcal??'',{min:0,max:100000,step:1,inputMode:'numeric'});
   function updateEstimate(){
     const weight=grams.valueAsNumber;
-    estimate.textContent=picked ? fmt(picked[1])+' kcal per 100 g'+(weight>0?' · '+fmt(Math.round(picked[1]*weight/100))+' kcal for this portion':'') : '';
+    estimate.textContent=picked ? fmt(picked[1])+' kcal per 100 '+portionUnit+(weight>0?' · '+fmt(Math.round(picked[1]*weight/100))+' kcal for this portion':'') : '';
   }
   function search(){
     matches.replaceChildren();
@@ -151,7 +154,7 @@ function food(meal='Breakfast',entry=null,copy=null){
     const found=dayplateFoods.filter(([name])=>terms.every(term=>name.toLowerCase().includes(term)));
     found.slice(0,20).forEach(item=>{
       matches.append(action(item[0]+' · '+item[1]+' kcal/100 g',()=>{
-        picked=item;description.value=item[0];matches.replaceChildren();updateEstimate();grams.focus();
+        picked=item;portionUnit='g';grams.labels[0].textContent='Portion weight (g)';description.value=item[0];matches.replaceChildren();updateEstimate();grams.focus();
       }));
     });
     if(!found.length)matches.textContent='No matching food. Try a different name or use manual entry.';
@@ -194,5 +197,6 @@ $('data').onclick=()=>{
   };
 };
 $('recipe-meal').onchange=render;
+$('pack').onclick=packagedFood;
 $('recent').onclick=recentFoods;$('repeat').onclick=repeatMeal;$('build').onclick=()=>buildRecipe();
 window.addEventListener('storage',event=>{if(!event.key||event.key===key)refresh();});refresh();

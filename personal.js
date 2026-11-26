@@ -36,7 +36,7 @@ function recentFoods(){
     for(const e of latest.values()){
       if(!e.name.toLowerCase().includes(query.value.toLowerCase()))continue;
       const button=action('',()=>food(e.meal,null,e),'recipe-choice');
-      button.append(node('b',e.name),node('small',(e.portion?fmt(e.portion.grams)+' g · ':'')+fmt(e.kcal)+' kcal · '+e.date));list.append(button);
+      button.append(node('b',e.name),node('small',(e.portion?fmt(e.portion.grams)+' '+(e.portion.unit||'g')+' · ':'')+fmt(e.kcal)+' kcal · '+e.date));list.append(button);
     }
     if(!list.children.length)list.append(node('p','No matching recent foods.'));
   }
@@ -65,7 +65,7 @@ function repeatMeal(){
     list.replaceChildren();target.value=meal.value;
     preview=history.filter(e=>e.date===source.value&&e.meal===meal.value).map(entry=>{
       const label=node('label',entry.name,'repeat-pick'),include=document.createElement('input');include.type='checkbox';include.checked=true;label.prepend(include);
-      const amount=node('label',entry.portion?'Portion (g)':'Calories (kcal)'),input=document.createElement('input');
+      const amount=node('label',entry.portion?'Portion ('+(entry.portion.unit||'g')+')':'Calories (kcal)'),input=document.createElement('input');
       Object.assign(input,{type:'number',min:entry.portion?0.01:0,max:100000,step:entry.portion?'any':1,required:true,value:entry.portion?.grams??entry.kcal});
       amount.append(input);include.onchange=()=>{input.disabled=!include.checked;};list.append(label,amount);
       return {entry,include,input};

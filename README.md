@@ -17,3 +17,8 @@ Each browser keeps its own diary. Under My data, download a backup before cleari
 
 ## Food data
 The bundled food index comes from the [UK Composition of Foods Integrated Dataset (CoFID), 2021](https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid), published by Public Health England. Contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/). The index includes named foods with numeric energy values and excludes the alcoholic drinks group, whose values are per 100 ml. Dayplate multiplies kcal per 100 g by portion weight in grams, divides by 100 and rounds to the nearest whole kcal.
+
+## Packaged foods
+Choose **Scan a product** to read a retail barcode or a GS1 Digital Link QR code, upload a label photo, or enter the digits. Dayplate checks the number and retrieves nutrition data from Open Food Facts. Confirm the name, kcal and whether the pack gives values per 100 g or 100 ml. Save a portion to remember the product locally. Saved products are included in diary backups. Macro estimates in the product review use available label data. A QR code that only links to a marketing page cannot identify a food.
+
+Product data: [Open Food Facts](https://world.openfoodfacts.org/data), Open Database Licence. Barcode decoding: [html5-qrcode 2.3.8](https://github.com/mebjas/html5-qrcode), Apache-2.0, incorporating ZXing. See scanner-LICENSE.txt.
