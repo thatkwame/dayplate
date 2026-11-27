@@ -50,6 +50,7 @@ function repeatMeal(){
     const result=preview.filter(row=>row.include.checked).map(({entry,input})=>{
       const n=input.valueAsNumber;
       const item={...entry,id:crypto.randomUUID(),date:selected,meal:target.value,kcal:n};
+      delete item.batchId;
       if(entry.portion){item.portion={...entry.portion,grams:n};item.kcal=Math.round(n*item.portion.per100/100);}
       return item;
     });

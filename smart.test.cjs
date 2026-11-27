@@ -1,0 +1,25 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const ctx=vm.createContext({console,crypto,structuredClone,URL,location:{href:'https://thatkwame.github.io/dayplate/',origin:'https://thatkwame.github.io',pathname:'/dayplate/'},localStorage:{getItem:()=>null}});
+for(const f of ['foods.js','recipes.js','personal.js','packaged.js','smart.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+f,'utf8'),ctx);
+vm.runInContext(fs.readFileSync(__dirname+'/app.js','utf8').split("$('prev').onclick")[0],ctx);
+function run(s){return vm.runInContext(s,ctx)}
+run("var d=validate({version:1,entries:[],goal:2200,savedRecipes:[]});");
+assert.equal(run('d.kitchen.plans.length'),0);assert.equal(run('read().kitchen.pantry.length'),0);
+assert.equal(run("generatePlan(d,'2026-11-27')"),28);run('validate(d)');
+assert.equal(run('d.entries.length'),0);assert.equal(run('new Set(d.kitchen.plans.map(p=>p.date+p.meal)).size'),28);
+run("d.kitchen.plans[0].locked=true; var locked=JSON.stringify(d.kitchen.plans[0]);d.kitchen.plans[1]={id:'out',date:d.kitchen.plans[1].date,meal:d.kitchen.plans[1].meal,status:'out',locked:true};");
+assert.equal(run("generatePlan(d,'2026-11-27')"),26);assert.equal(run('JSON.stringify(d.kitchen.plans.find(p=>p.locked&&p.status!=="out"))'),run('locked'));
+run("d.kitchen.preferences.exclude='chicken,tuna';");assert.equal(run("eligibleRecipes(d,'Dinner',30).some(r=>/chicken|tuna/i.test(r.name))"),false);
+assert.equal(run("eligibleRecipes(d,'Dinner',5).length"),0);
+run("var simple=validate({version:1,entries:[],goal:null,savedRecipes:[]});simple.kitchen.plans=[{id:'p',date:'2026-11-27',meal:'Dinner',status:'planned',locked:false,servings:2,recipe:{name:'Test',steps:[],ingredients:[{name:'Rice',grams:100,per100:130}]}}];simple.kitchen.pantry=[{name:'Rice',grams:75}];");
+assert.equal(run("shoppingNeeds(simple,['2026-11-27'])[0].grams"),125);
+run('consumePantry(simple.kitchen,simple.kitchen.plans[0].recipe.ingredients,2)');assert.equal(run('simple.kitchen.pantry.length'),0);
+run("simple.kitchen.plans[0].status='eaten'");assert.equal(run("shoppingNeeds(simple,['2026-11-27']).length"),0);
+run("simple.kitchen.batches=[{id:'b',name:'Batch',date:'2026-11-27',location:'Fridge',yieldGrams:500,per100:120}];simple.entries=[{id:'e',name:'Batch',meal:'Lunch',date:'2026-11-27',kcal:240,batchId:'b',portion:{grams:200,per100:120,unit:'g'}}];validate(simple)");
+assert.equal(run('batchRemaining(simple,simple.kitchen.batches[0])'),300);
+run('simple.entries[0].portion.grams=501;simple.entries[0].kcal=601');assert.throws(()=>run('validate(simple)'),/exceeds/);
+run('simple.entries=[];validate(simple)');assert.equal(run('batchRemaining(simple,simple.kitchen.batches[0])'),500);
+assert.equal(run("batchCode('https://evil.example/dayplate/#batch=b')"),'');assert.equal(run("batchCode('https://thatkwame.github.io/dayplate/#batch=b')"),'b');
+run('var bad=structuredClone(d);bad.kitchen.plans.push(bad.kitchen.plans[0])');assert.throws(()=>run('validate(bad)'),/Duplicate/);
+run('var restored=validate(JSON.parse(JSON.stringify(d)))');assert.equal(run('restored.kitchen.plans.length'),28);
+console.log('Passed migration, fresh storage, generation, locks, exclusions, shopping maths, pantry deductions, batch balances, overdraw protection, QR routing and backup round-trip.');

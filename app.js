@@ -27,11 +27,12 @@ function validate(d) {
   validateRecipes(d.savedRecipes);
   d.products ??= [];
   if(!Array.isArray(d.products)||!d.products.every(checkProduct))throw Error('Invalid saved products.');
+  validateKitchen(d);
   return d;
 }
 function read() {
   const raw=localStorage.getItem(key);
-  return raw===null ? {version:1,entries:[],goal:null,savedRecipes:[],products:[]} : validate(JSON.parse(raw));
+  return validate(raw===null ? {version:1,entries:[],goal:null,savedRecipes:[],products:[]} : JSON.parse(raw));
 }
 let state={version:1,entries:[],goal:null,savedRecipes:[],products:[]}, selected=today(), month=selected.slice(0,7);
 let noticeTimer;
@@ -60,7 +61,7 @@ function render() {
   for(const e of state.entries) totals.set(e.date,(totals.get(e.date)||0)+e.kcal);
   const total=totals.get(selected)||0;
   $('dateLabel').textContent=label(selected,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  renderRecipes(total);renderPersonal();
+  renderRecipes(total);renderPersonal();renderSmart();
   $('total').textContent=fmt(total);$('goal').textContent=state.goal?'Goal · '+fmt(state.goal)+' kcal':'Set a daily goal';
   $('remaining').textContent=state.goal ? fmt(Math.abs(state.goal-total))+(total>state.goal?' kcal above goal':' kcal remaining') : '';
   $('groups').replaceChildren();
@@ -119,6 +120,7 @@ function food(meal='Breakfast',entry=null,copy=null){
   modal(entry?'Edit food':'Log food','Save food',()=>{
     const name=description.value.trim();if(!name)throw Error('Enter a food or meal.');
     const record={id:entry?.id || crypto.randomUUID(),name,meal:category.value,date:date.value,kcal:Number(kcal.value)};
+    if(entry?.batchId)record.batchId=entry.batchId;
     if(modes.value==='weight'){
       if(!picked)throw Error('Select a matching food before saving.');
       record.portion={grams:grams.valueAsNumber,per100:picked[1],unit:portionUnit};
@@ -192,11 +194,11 @@ $('data').onclick=()=>{
       if(!file.files.length)return;
       const backup=validate(JSON.parse(await file.files[0].text()));
       modal('Restore this diary?','Replace diary',()=>{commit(d=>Object.assign(d,backup));notify('Backup restored');});
-      fields.append(node('p','This will replace your diary, recipes and goal with this backup ('+backup.entries.length+' entries and '+backup.savedRecipes.length+' recipes).'));
+      fields.append(node('p','This will replace your diary, recipes, kitchen plans, batches and goal with this backup ('+backup.entries.length+' entries and '+backup.savedRecipes.length+' recipes).'));
     }catch{$('error').textContent='Choose a valid Dayplate JSON backup.';file.value='';}
   };
 };
 $('recipe-meal').onchange=render;
 $('pack').onclick=packagedFood;
 $('recent').onclick=recentFoods;$('repeat').onclick=repeatMeal;$('build').onclick=()=>buildRecipe();
-window.addEventListener('storage',event=>{if(!event.key||event.key===key)refresh();});refresh();
+window.addEventListener('storage',event=>{if(!event.key||event.key===key)refresh();});refresh();initSmart();

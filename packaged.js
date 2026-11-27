@@ -82,6 +82,8 @@ function packagedFood(){
       reader??=new Html5Qrcode(view.id);
       await reader.start({facingMode:'environment'},{fps:8},async value=>{
         if(received||!active())return;
+        const batch=batchCode(value);
+        if(batch){received=true;await stop();if(active())logBatch(batch);return;}
         const code=gtin(value);
         if(!code){status.textContent='This code has no recognised product number. Try the striped barcode.';return;}
         received=true;await stop();if(!active())return;
@@ -97,6 +99,7 @@ function packagedFood(){
     if(!photo.files.length)return;
     try{await stop();camera.textContent='Start camera';reader??=new Html5Qrcode(view.id);
       const result=await reader.scanFile(photo.files[0],false);if(!active())return;
+      const batch=batchCode(result);if(batch){logBatch(batch);return;}
       input.value=gtin(result);if(!input.value)throw Error();await lookup();
     }catch{if(active())status.textContent='No product barcode recognised. Try a clearer photo or enter the digits.';}
   };
@@ -107,6 +110,7 @@ function packagedFood(){
     await stop();if(active())packageEditor(product,source);
   }
   async function lookup(){
+    const batch=batchCode(input.value);if(batch){await stop();if(active())logBatch(batch);return;}
     const code=gtin(input.value);
     if(!code){status.textContent='Enter a valid 8, 12, 13 or 14-digit product barcode, or a QR link containing its product number.';return;}
     if(busy)return;
