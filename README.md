@@ -36,3 +36,7 @@ Product data: [Open Food Facts](https://world.openfoodfacts.org/data), Open Data
 Run `node smart.test.cjs`. Covers old-backup migration, fresh storage, plan generation, slot uniqueness, locked/out slots, ingredient exclusions, shopping aggregation, pantry deductions, batch accounting, overdraw rejection, QR origin checks and backup round trips. Browser checks cover suggestion display, plan logging, batch creation, QR display and portion deduction. Physical phone-camera scanning still needs device testing.
 
 QR generation uses qrcode-generator 1.4.4 by Kazuhiko Arase, MIT licensed; see `qrcode-LICENSE.txt`. Scanning uses the existing bundled html5-qrcode library.
+
+## Mobile interface
+
+Four focused screens — Diary, Plan, Kitchen and Recipes — replace the long single page. Phones have persistent bottom navigation, a seven-day selector with one planning day visible at a time, larger touch targets and bottom-sheet forms. Desktop retains the full week and side-by-side diary/calendar. The diary now includes previous/next day controls and a calorie-goal progress ring. Existing data, backups and batch QR links retain their behaviour. No migration or account is required.

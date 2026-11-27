@@ -72,9 +72,11 @@ function renderSmart(){
   const k=smartDefaults(state),dates=weekDates(selected);
   $('planner-range').textContent=label(dates[0],{day:'numeric',month:'short'})+' – '+label(dates[6],{day:'numeric',month:'short'});
   $('kitchen-summary').textContent=k.pantry.length+' pantry ingredients · '+k.batches.filter(b=>batchRemaining(state,b)>0.005).length+' batches available';
+  const tabs=$('plan-tabs');tabs.replaceChildren();
+  for(const date of dates){const button=action('',()=>selectDay(date),'plan-date',label(date,{weekday:'long',day:'numeric',month:'long'}));button.setAttribute('aria-pressed',String(date===selected));button.append(node('small',label(date,{weekday:'short'})),node('b',local(date).getDate()));tabs.append(button);}
   const grid=$('plan-days');grid.replaceChildren();
   for(const date of dates){
-    const day=node('article','','plan-day');day.append(node('h3',label(date,{weekday:'short',day:'numeric',month:'short'})));
+    const day=node('article','','plan-day');day.classList.toggle('active-day',date===selected);day.append(node('h3',label(date,{weekday:'short',day:'numeric',month:'short'})));
     const plans=k.plans.filter(p=>p.date===date);
     const plannedKcal=plans.filter(p=>p.status!=='out').reduce((n,p)=>n+Math.round(batchEnergy(p.recipe.ingredients)*p.servings),0);
     if(plans.length)day.append(node('p',plannedKcal+' kcal planned'+(state.goal?' / '+state.goal+' goal':''),'sub'));

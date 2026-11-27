@@ -62,7 +62,10 @@ function render() {
   const total=totals.get(selected)||0;
   $('dateLabel').textContent=label(selected,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   renderRecipes(total);renderPersonal();renderSmart();
-  $('total').textContent=fmt(total);$('goal').textContent=state.goal?'Goal · '+fmt(state.goal)+' kcal':'Set a daily goal';
+  $('total').textContent=fmt(total);
+  const percent=state.goal?Math.round(total/state.goal*100):null;
+  $('goal-percent').textContent=percent===null?'—':percent+'%';
+  document.querySelector('.calorie-ring').style.setProperty('--progress',Math.min(100,percent||0)+'%');$('goal').textContent=state.goal?'Goal · '+fmt(state.goal)+' kcal':'Set a daily goal';
   $('remaining').textContent=state.goal ? fmt(Math.abs(state.goal-total))+(total>state.goal?' kcal above goal':' kcal remaining') : '';
   $('groups').replaceChildren();
   meals.forEach((meal,i)=>{
